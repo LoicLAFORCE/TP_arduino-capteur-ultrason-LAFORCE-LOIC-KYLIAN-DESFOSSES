@@ -1,0 +1,79 @@
+Bonjour monsieur,
+Voici le lien de la vidéo youtube résulte du câblage et du code arduino du système demandé :
+https://youtu.be/MHPFakkYYQU
+
+Code Arduino :
+
+#include <Servo.h>
+
+// Initialisation des composants
+int trigPin = 12;    // Broche de déclenchement du HC-SR04
+int echoPin = 11;    // Broche de réception du HC-SR04
+int ledvert = 4;    // Numéro de la broche à laquelle est reliée la LED verte
+int ledrouge = 3;   // Numéro de la broche à laquelle est reliée la LED rouge
+int servomoteur = 9; // Numéro de la broche à laquelle est relié le servomoteur
+
+// Déclaration de l'objet ''Servo'':
+Servo monServo;
+
+// Initialisation des variables pour le servomoteur:
+int ouvert = 1700; // Durée de l'impulsion en microsecondes pour l'angle de 90 degrés (barrière ouverte)
+int ferme = 700;   // Durée de l'impulsion en microsecondes pour l'angle de 0 degrés (barrière fermée)
+int distanceSeuil = 10; // Distance seuil pour déclencher l'ouverture de la barrière (en centimètres)
+
+void setup() {
+  // Initialisation des broches
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
+  pinMode(ledvert, OUTPUT);
+  pinMode(ledrouge, OUTPUT);
+
+  // La fonction attach permet de relier directement le servomoteur à la broche de l'Arduino sur laquelle il est branché.
+  monServo.attach(servomoteur);
+
+  // Initialisation de la position initiale que doit respecter le servomoteur lorsque l'on lance le programme
+  monServo.writeMicroseconds(ferme);
+
+  // Initialisation de la communication série
+  Serial.begin(9600);
+}
+void loop() {
+  digitalWrite(ledvert, LOW);
+    digitalWrite(ledrouge,HIGH);
+
+
+  // Mesure de la distance avec le HC-SR04
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+  long duration = pulseIn(echoPin, HIGH);
+  int distance = duration * 0.034 / 2;
+
+  // Si la distance est inférieure à la distance seuil, ouvrir la barrière
+  if (distance < distanceSeuil) {
+    Serial.println("Détection d'obstacle, ouverture de la barrière");
+
+    // Relève la barrière doucement
+    for (int i = 0; i <= 90; i++) {
+      monServo.writeMicroseconds(map(i, 0, 90, ferme, ouvert));
+      delay(15); // Ajustez la durée de délai selon la vitesse souhaitée
+    }
+
+    // Allume le feu vert pendant 5 secondes
+    digitalWrite(ledvert, HIGH);
+    digitalWrite(ledrouge, LOW);
+    delay(5000);
+
+    // Passe le feu au rouge
+    digitalWrite(ledvert, LOW);
+    digitalWrite(ledrouge, HIGH);
+
+    // Baisse la barrière doucement
+    for (int i = 90; i >= 0; i--) {
+      monServo.writeMicroseconds(map(i, 0, 90, ferme, ouvert));
+      delay(15); // Ajustez la durée de délai selon la vitesse souhaitée
+    }
+  }
+}
